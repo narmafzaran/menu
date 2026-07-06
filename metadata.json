@@ -1,0 +1,6 @@
+{
+  "name": "Menotak Digital Menu",
+  "description": "پلتفرم جامع منو دیجیتال بورس کافه‌ها و رستوران‌ها با قابلیت مدیریت رستوران، سفارش‌گیری آنلاین و حضوری، شخصی‌سازی رنگ‌بندی و گزارش‌دهی پیشرفته",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

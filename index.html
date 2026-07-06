@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>منوتک | منو دیجیتال بورس کافه‌ها و رستوران‌ها</title>
+    <script>
+      // Force mock WebSocket for Vite HMR to prevent infinite page reloads behind container reverse proxies
+      (function() {
+        const OriginalWebSocket = window.WebSocket;
+        if (OriginalWebSocket) {
+          window.WebSocket = function(url, protocols) {
+            if (typeof url === 'string' && (url.includes('/vite') || url.includes('ws://') || url.includes('wss://'))) {
+              console.log('[Dev-Fix] Intercepted Vite HMR WebSocket connection to prevent page reloads:', url);
+              const mockWS = {
+                url: url,
+                readyState: 1, // OPEN
+                bufferedAmount: 0,
+                extensions: '',
+                protocol: '',
+                binaryType: 'blob',
+                send: function() {},
+                close: function() {},
+                addEventListener: function(type, listener) {
+                  if (type === 'open') {
+                    setTimeout(() => listener({ type: 'open' }), 50);
+                  }
+                },
+                removeEventListener: function() {},
+                onopen: null,
+                onclose: null,
+                onerror: null,
+                onmessage: null
+              };
+              setTimeout(() => {
+                if (typeof mockWS.onopen === 'function') {
+                  mockWS.onopen({ type: 'open' });
+                }
+              }, 50);
+              return mockWS;
+            }
+            return new OriginalWebSocket(url, protocols);
+          };
+          window.WebSocket.prototype = OriginalWebSocket.prototype;
+          for (let key in OriginalWebSocket) {
+            if (OriginalWebSocket.hasOwnProperty(key)) {
+              window.WebSocket[key] = OriginalWebSocket[key];
+            }
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
