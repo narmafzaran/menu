@@ -8,6 +8,7 @@ import {
 import { Restaurant, Category, MenuItem, Order, SubscriptionType, OrderStatus } from '../types';
 import QRCodeModal from './QRCodeModal';
 import { motion, AnimatePresence } from 'motion/react';
+import { apiSaveMenu } from '../lib/api';
 
 interface RestaurantAdminProps {
   restaurant: Restaurant;
@@ -55,17 +56,8 @@ export default function RestaurantAdmin({
       const restCats = categories.filter(c => c.restaurantId === restaurant.id);
       const restItems = menuItems.filter(i => i.restaurantId === restaurant.id);
 
-      const res = await fetch(`/api/menu/${slug}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rest: restaurant, cats: restCats, items: restItems })
-      });
-
-      if (res.ok) {
-        setPublishSuccess(true);
-      } else {
-        setPublishSuccess(false);
-      }
+      await apiSaveMenu(slug, { rest: restaurant, cats: restCats, items: restItems });
+      setPublishSuccess(true);
     } catch (err) {
       console.error('Error publishing to cloud:', err);
       setPublishSuccess(false);

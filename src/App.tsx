@@ -12,6 +12,17 @@ import RestaurantAdmin from './components/RestaurantAdmin';
 import CustomerMenu from './components/CustomerMenu';
 import LandingPage from './components/LandingPage';
 import AuthPage, { AuthUser } from './components/AuthPage';
+import {
+  apiFetchMenu,
+  apiSaveMenu,
+  apiFetchOrders,
+  apiSyncOrder,
+  apiUpdateOrderStatus,
+  apiFetchUsers,
+  apiSaveUsers,
+  apiFetchRestaurants,
+  apiSaveRestaurants
+} from './lib/api';
 
 export default function App() {
   // Load data from LocalStorage or use default mock data
@@ -105,42 +116,36 @@ export default function App() {
   useEffect(() => {
     const loadGlobalData = async () => {
       try {
-        const usersRes = await fetch('/api/users');
-        if (usersRes.ok) {
-          const cloudUsers = await usersRes.json();
-          if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
-            setUsers(prev => {
-              // Merge: keep all cloud users, plus any local users that don't exist in cloud (by id or username)
-              const merged = [...cloudUsers];
-              prev.forEach(localUser => {
-                if (!merged.some(u => u.id === localUser.id || u.username.toLowerCase() === localUser.username.toLowerCase())) {
-                  merged.push(localUser);
-                }
-              });
-              return merged;
+        const cloudUsers = await apiFetchUsers();
+        if (Array.isArray(cloudUsers) && cloudUsers.length > 0) {
+          setUsers(prev => {
+            // Merge: keep all cloud users, plus any local users that don't exist in cloud (by id or username)
+            const merged = [...cloudUsers];
+            prev.forEach(localUser => {
+              if (!merged.some(u => u.id === localUser.id || u.username.toLowerCase() === localUser.username.toLowerCase())) {
+                merged.push(localUser);
+              }
             });
-          }
+            return merged;
+          });
         }
       } catch (err) {
         console.error('Error loading cloud users:', err);
       }
 
       try {
-        const restRes = await fetch('/api/restaurants');
-        if (restRes.ok) {
-          const cloudRestaurants = await restRes.json();
-          if (Array.isArray(cloudRestaurants) && cloudRestaurants.length > 0) {
-            setRestaurants(prev => {
-              // Merge: keep all cloud restaurants, plus any local ones that don't exist in cloud (by id or slug)
-              const merged = [...cloudRestaurants];
-              prev.forEach(localRest => {
-                if (!merged.some(r => r.id === localRest.id || r.slug.toLowerCase() === localRest.slug.toLowerCase())) {
-                  merged.push(localRest);
-                }
-              });
-              return merged;
+        const cloudRestaurants = await apiFetchRestaurants();
+        if (Array.isArray(cloudRestaurants) && cloudRestaurants.length > 0) {
+          setRestaurants(prev => {
+            // Merge: keep all cloud restaurants, plus any local ones that don't exist in cloud (by id or slug)
+            const merged = [...cloudRestaurants];
+            prev.forEach(localRest => {
+              if (!merged.some(r => r.id === localRest.id || r.slug.toLowerCase() === localRest.slug.toLowerCase())) {
+                merged.push(localRest);
+              }
             });
-          }
+            return merged;
+          });
         }
       } catch (err) {
         console.error('Error loading cloud restaurants:', err);
@@ -159,16 +164,7 @@ export default function App() {
       const restCats = cats.filter(c => c.restaurantId === rest.id);
       const restItems = items.filter(i => i.restaurantId === rest.id);
 
-      const res = await fetch(`/api/menu/${slug}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rest, cats: restCats, items: restItems })
-      });
-
-      if (!res.ok) {
-        throw new Error('API save failed');
-      }
-
+      await apiSaveMenu(slug, { rest, cats: restCats, items: restItems });
       console.log(`Cloud sync success for ${slug}`);
     } catch (err) {
       console.error('Cloud save failed:', err);
@@ -178,11 +174,7 @@ export default function App() {
   // Helper to fetch/load a restaurant's menu from the cloud
   const fetchRestaurantFromCloud = async (slug: string, table?: string) => {
     try {
-      const res = await fetch(`/api/menu/${slug}`);
-      if (!res.ok) {
-        throw new Error('Failed to fetch menu from cloud API');
-      }
-      const data = await res.json();
+      const data = await apiFetchMenu(slug);
       const { rest, cats: cloudCats, items: cloudItems } = data;
       
       if (!rest) {
@@ -236,11 +228,7 @@ export default function App() {
   // Helper to sync single placed order
   const syncOrderToCloud = async (newOrder: Order, slug: string) => {
     try {
-      await fetch(`/api/orders/${slug}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOrder)
-      });
+      await apiSyncOrder(slug, newOrder);
     } catch (err) {
       console.error('Order cloud sync failed:', err);
     }
@@ -249,11 +237,7 @@ export default function App() {
   // Helper to update order status on cloud
   const updateOrderOnCloud = async (orderId: string, status: OrderStatus, slug: string) => {
     try {
-      await fetch(`/api/orders/${slug}/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
+      await apiUpdateOrderStatus(slug, orderId, status);
     } catch (err) {
       console.error('Order update cloud sync failed:', err);
     }
@@ -263,11 +247,7 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('menumix_restaurants', JSON.stringify(restaurants));
     if (isCloudLoaded) {
-      fetch('/api/restaurants', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(restaurants)
-      }).catch(err => console.error('Failed to sync restaurants to cloud:', err));
+      apiSaveRestaurants(restaurants).catch(err => console.error('Failed to sync restaurants to cloud:', err));
     }
   }, [restaurants, isCloudLoaded]);
 
@@ -282,11 +262,7 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('menutak_users', JSON.stringify(users));
     if (isCloudLoaded) {
-      fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(users)
-      }).catch(err => console.error('Failed to sync users to cloud:', err));
+      apiSaveUsers(users).catch(err => console.error('Failed to sync users to cloud:', err));
     }
   }, [users, isCloudLoaded]);
 
@@ -318,26 +294,23 @@ export default function App() {
     const loadRestaurantMenuFromCloud = async () => {
       try {
         const slug = activeRestaurant.slug;
-        const res = await fetch(`/api/menu/${slug}`);
-        if (res.ok) {
-          const data = await res.json();
-          const { rest, cats: cloudCats, items: cloudItems } = data;
-          if (rest) {
-            setRestaurants(prev => {
-              const filtered = prev.filter(r => r.slug !== slug && r.id !== rest.id);
-              return [...filtered, rest];
-            });
+        const data = await apiFetchMenu(slug);
+        const { rest, cats: cloudCats, items: cloudItems } = data;
+        if (rest) {
+          setRestaurants(prev => {
+            const filtered = prev.filter(r => r.slug !== slug && r.id !== rest.id);
+            return [...filtered, rest];
+          });
 
-            setCategories(prev => {
-              const filtered = prev.filter(c => c.restaurantId !== rest.id);
-              return [...filtered, ...cloudCats];
-            });
+          setCategories(prev => {
+            const filtered = prev.filter(c => c.restaurantId !== rest.id);
+            return [...filtered, ...cloudCats];
+          });
 
-            setMenuItems(prev => {
-              const filtered = prev.filter(i => i.restaurantId !== rest.id);
-              return [...filtered, ...cloudItems];
-            });
-          }
+          setMenuItems(prev => {
+            const filtered = prev.filter(i => i.restaurantId !== rest.id);
+            return [...filtered, ...cloudItems];
+          });
         }
       } catch (err) {
         console.warn('Failed to pre-load restaurant menu from cloud:', err);
@@ -368,25 +341,22 @@ export default function App() {
     
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/orders/${activeRestaurant.slug}`);
-        if (res.ok) {
-          const cloudOrders: Order[] = await res.json();
-          if (cloudOrders && Array.isArray(cloudOrders)) {
-            setOrders(prev => {
-              const merged = [...prev];
-              cloudOrders.forEach(co => {
-                const idx = merged.findIndex(o => o.id === co.id);
-                if (idx > -1) {
-                  if (JSON.stringify(merged[idx]) !== JSON.stringify(co)) {
-                    merged[idx] = co;
-                  }
-                } else {
-                  merged.unshift(co);
+        const cloudOrders = await apiFetchOrders(activeRestaurant.slug);
+        if (cloudOrders && Array.isArray(cloudOrders)) {
+          setOrders(prev => {
+            const merged = [...prev];
+            cloudOrders.forEach(co => {
+              const idx = merged.findIndex(o => o.id === co.id);
+              if (idx > -1) {
+                if (JSON.stringify(merged[idx]) !== JSON.stringify(co)) {
+                  merged[idx] = co;
                 }
-              });
-              return merged;
+              } else {
+                merged.unshift(co);
+              }
             });
-          }
+            return merged;
+          });
         }
       } catch (err) {
         // Silent fail
@@ -402,17 +372,14 @@ export default function App() {
     
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/orders/${activeRestaurant.slug}`);
-        if (res.ok) {
-          const cloudOrders: Order[] = await res.json();
-          if (cloudOrders && Array.isArray(cloudOrders)) {
-            const match = cloudOrders.find(o => o.id === activeOrder.id);
-            if (match && JSON.stringify(match) !== JSON.stringify(activeOrder)) {
-              setActiveOrder(match);
-              localStorage.setItem('menumix_active_order', JSON.stringify(match));
-              
-              setOrders(prev => prev.map(o => o.id === match.id ? match : o));
-            }
+        const cloudOrders = await apiFetchOrders(activeRestaurant.slug);
+        if (cloudOrders && Array.isArray(cloudOrders)) {
+          const match = cloudOrders.find(o => o.id === activeOrder.id);
+          if (match && JSON.stringify(match) !== JSON.stringify(activeOrder)) {
+            setActiveOrder(match);
+            localStorage.setItem('menumix_active_order', JSON.stringify(match));
+            
+            setOrders(prev => prev.map(o => o.id === match.id ? match : o));
           }
         }
       } catch (err) {
