@@ -6,6 +6,7 @@ import {
   Cloud, Check, AlertCircle
 } from 'lucide-react';
 import { Restaurant, Category, MenuItem, Order, SubscriptionType, OrderStatus } from '../types';
+import { SYSTEM_LOCAL_IMAGES } from '../lib/localImages';
 import QRCodeModal from './QRCodeModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { apiSaveMenu } from '../lib/api';
@@ -22,6 +23,7 @@ interface RestaurantAdminProps {
   onAddMenuItem: (item: Omit<MenuItem, 'id' | 'restaurantId'>) => void;
   onToggleMenuItem: (id: string, active: boolean) => void;
   onDeleteMenuItem: (id: string) => void;
+  onUpdateMenuItem: (updatedItem: MenuItem) => void;
   onUpdateOrderStatus: (orderId: string, status: OrderStatus) => void;
   onLogout?: () => void;
 }
@@ -38,6 +40,7 @@ export default function RestaurantAdmin({
   onAddMenuItem,
   onToggleMenuItem,
   onDeleteMenuItem,
+  onUpdateMenuItem,
   onUpdateOrderStatus,
   onLogout
 }: RestaurantAdminProps) {
@@ -85,7 +88,25 @@ export default function RestaurantAdmin({
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemCatId, setNewItemCatId] = useState(restaurantCategories[0]?.id || '');
-  const [newItemImg, setNewItemImg] = useState('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&auto=format&fit=crop&q=80');
+  const [newItemImg, setNewItemImg] = useState(SYSTEM_LOCAL_IMAGES[0].url);
+
+  // States for Item editing modal
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [editItemName, setEditItemName] = useState('');
+  const [editItemPrice, setEditItemPrice] = useState('');
+  const [editItemDesc, setEditItemDesc] = useState('');
+  const [editItemCatId, setEditItemCatId] = useState('');
+  const [editItemImg, setEditItemImg] = useState('');
+
+  useEffect(() => {
+    if (editingItem) {
+      setEditItemName(editingItem.name);
+      setEditItemPrice(editingItem.price.toString());
+      setEditItemDesc(editingItem.description || '');
+      setEditItemCatId(editingItem.categoryId);
+      setEditItemImg(editingItem.image);
+    }
+  }, [editingItem]);
 
   // Stats Calculations
   const completedOrders = restaurantOrders.filter(o => o.status === 'delivered');
@@ -150,15 +171,39 @@ export default function RestaurantAdmin({
     setNewItemName('');
     setNewItemPrice('');
     setNewItemDesc('');
+    setNewItemImg(SYSTEM_LOCAL_IMAGES[0].url);
   };
+
+  const handleUpdateItemSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem || !editItemName.trim() || !editItemPrice || !editItemCatId) return;
+    onUpdateMenuItem({
+      ...editingItem,
+      name: editItemName,
+      price: Number(editItemPrice),
+      description: editItemDesc,
+      categoryId: editItemCatId,
+      image: editItemImg,
+    });
+    setEditingItem(null);
+  };
+
+  // Add auto-category fallback if categories exist but none selected
+  useEffect(() => {
+    if (!newItemCatId && restaurantCategories.length > 0) {
+      setNewItemCatId(restaurantCategories[0].id);
+    }
+  }, [restaurantCategories, newItemCatId]);
 
   // Mock prefilled high quality foods for faster selection when adding a new item
   const MOCK_FOOD_PRESETS = [
-    { name: 'قهوه فرانسه', img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80' },
-    { name: 'پیتزا پپرونی', img: 'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=400&auto=format&fit=crop&q=80' },
-    { name: 'سالاد سزار', img: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=400&auto=format&fit=crop&q=80' },
-    { name: 'کیک هویج', img: 'https://images.unsplash.com/photo-1607349913338-fca6f7fc42d0?w=400&auto=format&fit=crop&q=80' },
-    { name: 'سیب‌زمینی ساده', img: 'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400&auto=format&fit=crop&q=80' }
+    { name: 'قهوه گرم', img: SYSTEM_LOCAL_IMAGES[0].url },
+    { name: 'پیتزا تنوری', img: SYSTEM_LOCAL_IMAGES[1].url },
+    { name: 'همبرگر مخصوص', img: SYSTEM_LOCAL_IMAGES[2].url },
+    { name: 'سالاد رژیمی', img: SYSTEM_LOCAL_IMAGES[3].url },
+    { name: 'سیب‌زمینی سرخ‌شده', img: SYSTEM_LOCAL_IMAGES[4].url },
+    { name: 'کیک و دسر', img: SYSTEM_LOCAL_IMAGES[5].url },
+    { name: 'نوشیدنی سرد', img: SYSTEM_LOCAL_IMAGES[6].url }
   ];
 
   return (
@@ -690,20 +735,82 @@ export default function RestaurantAdmin({
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-bold text-neutral-500 block mb-1">آدرس تصویر (یا انتخاب از پالت زیر):</label>
-                      <input
-                        type="text"
-                        value={newItemImg}
-                        onChange={(e) => setNewItemImg(e.target.value)}
-                        className="w-full text-xs px-3 py-2 border border-neutral-200 rounded-lg focus:outline-hidden focus:border-amber-500 font-sans font-mono"
-                      />
+                      <label className="text-[11px] font-bold text-neutral-500 block mb-1">تصویر محصول:</label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl border border-neutral-200 bg-neutral-50 flex items-center justify-center overflow-hidden shrink-0">
+                          {newItemImg ? (
+                            <img src={newItemImg} alt="Preview" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[9px] text-neutral-400">بدون عکس</span>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="new-item-file-upload"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  if (event.target?.result) {
+                                    setNewItemImg(event.target.result as string);
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="new-item-file-upload"
+                            className="inline-flex items-center gap-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors border border-neutral-200"
+                          >
+                            <span>آپلود تصویر اختصاصی</span>
+                          </label>
+                          <p className="text-[8px] text-neutral-400">ذخیره محلی در قالب متن بدون نیاز به هاست</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Preset quick image select */}
+                  {/* Selectable Local Presets Grid */}
+                  <div className="bg-neutral-50 border border-neutral-100/80 rounded-2xl p-3 space-y-2">
+                    <span className="text-[10px] font-bold text-neutral-600 block">انتخاب تصویر از پالت اختصاصی سیستم:</span>
+                    <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
+                      {SYSTEM_LOCAL_IMAGES.map((img) => {
+                        const isSelected = newItemImg === img.url;
+                        return (
+                          <button
+                            key={img.id}
+                            type="button"
+                            onClick={() => setNewItemImg(img.url)}
+                            className={`aspect-square rounded-xl overflow-hidden border-2 relative transition-all bg-white hover:scale-105 shrink-0 ${
+                              isSelected
+                                ? 'border-amber-500 ring-2 ring-amber-500/25 shadow-xs'
+                                : 'border-neutral-200/60 hover:border-neutral-300'
+                            }`}
+                            title={img.name}
+                          >
+                            <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-amber-500/10 flex items-center justify-center">
+                                <span className="bg-amber-500 text-white rounded-full p-0.5 shadow-xs">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </span>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Preset quick name select */}
                   <div>
-                    <span className="text-[10px] font-bold text-neutral-400 block mb-1.5">انتخاب سریع تصاویر پیش‌فرض غذا:</span>
-                    <div className="flex flex-wrap gap-2">
+                    <span className="text-[10px] font-bold text-neutral-400 block mb-1.5">انتخاب سریع نام و طرح محصول:</span>
+                    <div className="flex flex-wrap gap-1.5">
                       {MOCK_FOOD_PRESETS.map((preset) => (
                         <button
                           key={preset.name}
@@ -712,9 +819,8 @@ export default function RestaurantAdmin({
                             setNewItemName(preset.name);
                             setNewItemImg(preset.img);
                           }}
-                          className="flex items-center gap-1.5 bg-neutral-100 hover:bg-amber-100/40 text-neutral-700 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all border border-neutral-200/50"
+                          className="flex items-center gap-1 bg-neutral-100 hover:bg-amber-100/40 text-neutral-700 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all border border-neutral-200/50"
                         >
-                          <img src={preset.img} alt={preset.name} className="w-4 h-4 rounded-full object-cover" />
                           <span>{preset.name}</span>
                         </button>
                       ))}
@@ -764,17 +870,24 @@ export default function RestaurantAdmin({
                           <div className="flex items-center justify-between border-t border-neutral-100 pt-2 mt-2">
                             <span className="font-bold text-neutral-700 text-[11px]">{(item.price).toLocaleString('fa-IR')} تومان</span>
 
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => setEditingItem(item)}
+                                className="p-1 text-neutral-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                                title="ویرایش محصول"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 onClick={() => onToggleMenuItem(item.id, !item.isActive)}
-                                className="text-neutral-400 hover:text-amber-600 transition-colors"
+                                className="text-neutral-400 hover:text-amber-600 transition-colors cursor-pointer"
                                 title={item.isActive ? 'ناموجود کردن فوری' : 'موجود کردن فوری'}
                               >
                                 {item.isActive ? <ToggleRight className="w-5.5 h-5.5 text-amber-500" /> : <ToggleLeft className="w-5.5 h-5.5" />}
                               </button>
                               <button
                                 onClick={() => onDeleteMenuItem(item.id)}
-                                className="p-1 text-neutral-300 hover:text-red-500 transition-colors"
+                                className="p-1 text-neutral-300 hover:text-red-500 transition-colors cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -977,6 +1090,170 @@ export default function RestaurantAdmin({
           </div>
         )}
       </div>
+
+      {/* Edit Menu Item Modal */}
+      <AnimatePresence>
+        {editingItem && (
+          <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 shadow-xl border border-neutral-100 max-w-lg w-full space-y-4 text-right"
+              dir="rtl"
+            >
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                <h3 className="font-extrabold text-neutral-800 text-sm">ویرایش محصول: {editingItem.name}</h3>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="text-neutral-400 hover:text-neutral-600 text-xl font-bold cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateItemSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">نام محصول / غذا:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editItemName}
+                      onChange={(e) => setEditItemName(e.target.value)}
+                      className="w-full text-xs px-3 py-2 border border-neutral-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-sans"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">قیمت فروش (تومان):</label>
+                    <input
+                      type="number"
+                      required
+                      value={editItemPrice}
+                      onChange={(e) => setEditItemPrice(e.target.value)}
+                      className="w-full text-xs px-3 py-2 border border-neutral-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">انتخاب دسته‌بندی مربوطه:</label>
+                    <select
+                      value={editItemCatId}
+                      onChange={(e) => setEditItemCatId(e.target.value)}
+                      className="w-full text-xs px-3 py-2 border border-neutral-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-sans"
+                    >
+                      {restaurantCategories.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-500 block mb-1">تصویر محصول:</label>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl border border-neutral-200 overflow-hidden shrink-0 flex items-center justify-center bg-neutral-50">
+                        {editItemImg ? (
+                          <img src={editItemImg} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[9px] text-neutral-400">بدون عکس</span>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id="edit-item-file-upload"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                if (event.target?.result) {
+                                  setEditItemImg(event.target.result as string);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor="edit-item-file-upload"
+                          className="inline-flex items-center gap-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-[10px] font-bold px-3 py-1.5 rounded-lg cursor-pointer transition-colors border border-neutral-200"
+                        >
+                          <span>آپلود تصویر اختصاصی</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Edit Local Presets Grid */}
+                <div className="bg-neutral-50 border border-neutral-100/85 rounded-2xl p-3.5 space-y-2">
+                  <span className="text-[10px] font-bold text-neutral-600 block">انتخاب تصویر از پالت اختصاصی سیستم:</span>
+                  <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
+                    {SYSTEM_LOCAL_IMAGES.map((img) => {
+                      const isSelected = editItemImg === img.url;
+                      return (
+                        <button
+                          key={img.id}
+                          type="button"
+                          onClick={() => setEditItemImg(img.url)}
+                          className={`aspect-square rounded-xl overflow-hidden border-2 relative transition-all bg-white hover:scale-105 shrink-0 ${
+                            isSelected
+                              ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-xs'
+                              : 'border-neutral-200/60 hover:border-neutral-300'
+                          }`}
+                          title={img.name}
+                        >
+                          <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-indigo-500/10 flex items-center justify-center">
+                              <span className="bg-indigo-500 text-white rounded-full p-0.5 shadow-xs">
+                                <Check className="w-2 h-2 stroke-[3]" />
+                              </span>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-neutral-500 block mb-1">توضیحات و ترکیبات آیتم:</label>
+                  <textarea
+                    rows={2}
+                    value={editItemDesc}
+                    onChange={(e) => setEditItemDesc(e.target.value)}
+                    className="w-full text-xs px-3 py-2 border border-neutral-200 rounded-lg focus:outline-hidden focus:border-indigo-500 font-sans"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    ثبت نهایی تغییرات محصول
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingItem(null)}
+                    className="px-4 py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                  >
+                    انصراف
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* QR Code Modal rendering */}
       <QRCodeModal

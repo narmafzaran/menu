@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ShieldCheck, Store, Smartphone, Info, RotateCcw, Laptop, AlertCircle, Sparkles } from 'lucide-react';
 import { Restaurant, Category, MenuItem, Order, SubscriptionType, OrderStatus } from './types';
+import { SYSTEM_LOCAL_IMAGES } from './lib/localImages';
 import {
   INITIAL_RESTAURANTS,
   INITIAL_CATEGORIES,
@@ -564,6 +565,10 @@ export default function App() {
     }
   };
 
+  const handleUpdateMenuItem = (updatedItem: MenuItem) => {
+    setMenuItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
+  };
+
   const handleUpdateOrderStatus = (orderId: string, status: OrderStatus) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
     
@@ -654,7 +659,7 @@ export default function App() {
                   name: 'اسپرسو سینگل',
                   price: 45000,
                   description: 'تهیه شده از دانه‌های ۱۰۰٪ عربیکا با طعم‌یاد کاکائویی و غلظت عالی',
-                  image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=80',
+                  image: SYSTEM_LOCAL_IMAGES[0].url,
                   isActive: true
                 },
                 {
@@ -664,7 +669,7 @@ export default function App() {
                   name: 'کاپوچینو',
                   price: 65000,
                   description: 'اسپرسو، شیر داغ و کف شیر مخملی غلیظ',
-                  image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=400&auto=format&fit=crop&q=80',
+                  image: SYSTEM_LOCAL_IMAGES[0].url,
                   isActive: true
                 },
                 {
@@ -674,7 +679,7 @@ export default function App() {
                   name: 'چیزکیک نیویورکی',
                   price: 85000,
                   description: 'چیزکیک کلاسیک پخته شده با کراست بیسکوئیتی ترد و سوس آلبالو',
-                  image: 'https://images.unsplash.com/photo-1607349913338-fca6f7fc42d0?w=400&auto=format&fit=crop&q=80',
+                  image: SYSTEM_LOCAL_IMAGES[5].url,
                   isActive: true
                 }
               ];
@@ -727,6 +732,7 @@ export default function App() {
               onAddMenuItem={handleAddMenuItem}
               onToggleMenuItem={handleToggleMenuItem}
               onDeleteMenuItem={handleDeleteMenuItem}
+              onUpdateMenuItem={handleUpdateMenuItem}
               onUpdateOrderStatus={handleUpdateOrderStatus}
               onLogout={() => {
                 setLoggedInUser(null);

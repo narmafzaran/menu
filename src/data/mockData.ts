@@ -1,4 +1,5 @@
 import { Restaurant, Category, MenuItem, Order, DailyStats } from '../types';
+import { SYSTEM_LOCAL_IMAGES } from '../lib/localImages';
 
 export const INITIAL_RESTAURANTS: Restaurant[] = [
   {
@@ -83,7 +84,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'اسپرسو دبل شات',
     price: 65000,
     description: '۱۰۰٪ عربیکا، طعم‌یاد کاکائو و کارامل، عصاره‌گیری استاندارد',
-    image: 'https://images.unsplash.com/photo-1510972527409-cef1903972fa?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[0].url,
     isActive: true
   },
   {
@@ -93,7 +94,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'کافه لاته',
     price: 85000,
     description: 'اسپرسو دبل، شیر فوم‌دار داغ، طرح زیبای لاته آرت روی فوم',
-    image: 'https://images.unsplash.com/photo-1570968915860-54d5c301fc9f?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[0].url,
     isActive: true
   },
   {
@@ -103,7 +104,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'آیس لاته کارامل',
     price: 95000,
     description: 'شیر سرد، یخ، اسپرسو تک شات، سس کارامل دست‌ساز کافه پاییز',
-    image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[6].url,
     isActive: true
   },
   {
@@ -113,7 +114,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'موهیتو کلاسیک',
     price: 88000,
     description: 'نعنای تازه محلی، لیموترش شیرازی، شکر قهوه‌ای، سودا و یخ خرد شده',
-    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[6].url,
     isActive: true
   },
   {
@@ -123,7 +124,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'کیک شکلاتی بی‌بی',
     price: 90000,
     description: 'کیک مرطوب شکلاتی با خامه فشرده کاکائویی و تزیین ترافل شکلات',
-    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[5].url,
     isActive: true
   },
   {
@@ -133,7 +134,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'کروسان ساده فرانسوی',
     price: 75000,
     description: 'کروسان کره‌ای پخت روز، با لایه‌های ترد و بافت داخلی بسیار لطیف',
-    image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[5].url,
     isActive: true
   },
   {
@@ -143,7 +144,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'صبحانه انگلیسی',
     price: 195000,
     description: 'سوسیس کراکف، دو عدد نیمرو، لوبیا گرم، قارچ گریل، ژامبون ۹۰٪، نان تست و دورچین سبزیجات',
-    image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[7].url,
     isActive: true
   },
 
@@ -155,7 +156,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'داک برگر مخصوص',
     price: 245000,
     description: '۱۸۰ گرم گوشت گوساله خالص گریل‌شده، پنیر گودا دوبل، سس دست‌ساز داک، کاهو و گوجه فرنگی تازه',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[2].url,
     isActive: true
   },
   {
@@ -165,7 +166,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'ماشروم برگر',
     price: 260000,
     description: '۱۸۰ گرم گوشت خالص، سس قارچ خامه ای غلیظ، پیاز کاراملی شیرین، پنیر موزارلا کش‌آمدنی',
-    image: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[2].url,
     isActive: true
   },
   {
@@ -175,7 +176,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'سیب‌زمینی ویژه داک',
     price: 135000,
     description: 'خلال سیب‌زمینی سرخ‌شده ترد، پنیر چدار ذوب‌شده، ژامبون خرد شده، قارچ و سس رنچ',
-    image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[4].url,
     isActive: true
   },
   {
@@ -185,7 +186,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'فیله سوخاری اسپایسی (۳ تکه)',
     price: 190000,
     description: 'فیله مرغ مرینت شده تند با پولکی‌های ترد و پفکی، دورچین سالاد کلم و سس سیر',
-    image: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[9].url,
     isActive: true
   },
   {
@@ -195,7 +196,7 @@ export const INITIAL_MENU_ITEMS: MenuItem[] = [
     name: 'میلک شیک اوریو',
     price: 110000,
     description: 'بستنی وانیلی درجه یک، کوکی اوریو خرد شده، خامه فرم گرفته و سس شکلات تلخ غلیظ',
-    image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&auto=format&fit=crop&q=80',
+    image: SYSTEM_LOCAL_IMAGES[6].url,
     isActive: true
   }
 ];
