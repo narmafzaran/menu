@@ -4,9 +4,17 @@ import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
-const DIRECTORY_BLOB_ID = '019f324a-4f9c-7073-b200-0f566a40ab91';
+const DIRECTORY_BLOB_ID = 'addbfee';
 
 app.use(express.json());
+
+// Prevent response caching for API requests
+app.use("/api", (req, res, next) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 
 interface RestaurantBlobMapping {
   menuBlobId: string;
@@ -63,12 +71,15 @@ async function getOrCreateUsersBlobId(directory: Directory): Promise<string> {
 
   let usersBlobId = '';
   try {
-    const res = await fetch('https://jsonblob.com/api/jsonBlob', {
+    const res = await fetch('https://extendsclass.com/api/json-storage/bin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(defaultUsers)
     });
-    usersBlobId = res.headers.get('x-jsonblob-id') || '';
+    if (res.ok) {
+      const data = await res.json();
+      usersBlobId = data.id || '';
+    }
   } catch (err) {
     console.error('Failed to create users blob:', err);
   }
@@ -79,7 +90,7 @@ async function getOrCreateUsersBlobId(directory: Directory): Promise<string> {
 
   directory._usersBlobId = usersBlobId;
   try {
-    await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`, {
+    await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(directory)
@@ -155,12 +166,15 @@ async function getOrCreateRestaurantsBlobId(directory: Directory): Promise<strin
 
   let restaurantsBlobId = '';
   try {
-    const res = await fetch('https://jsonblob.com/api/jsonBlob', {
+    const res = await fetch('https://extendsclass.com/api/json-storage/bin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(defaultRestaurants)
     });
-    restaurantsBlobId = res.headers.get('x-jsonblob-id') || '';
+    if (res.ok) {
+      const data = await res.json();
+      restaurantsBlobId = data.id || '';
+    }
   } catch (err) {
     console.error('Failed to create restaurants blob:', err);
   }
@@ -171,7 +185,7 @@ async function getOrCreateRestaurantsBlobId(directory: Directory): Promise<strin
 
   directory._restaurantsBlobId = restaurantsBlobId;
   try {
-    await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`, {
+    await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(directory)
@@ -183,17 +197,23 @@ async function getOrCreateRestaurantsBlobId(directory: Directory): Promise<strin
   return restaurantsBlobId;
 }
 
-// Helper to get or create blob IDs for a given slug from the jsonblob directory
+// Helper to get or create blob IDs for a given slug from the extendsclass directory
 async function getOrCreateBlobIds(slug: string): Promise<RestaurantBlobMapping> {
   // 1. Fetch directory
   let directory: Directory = {};
   try {
-    const res = await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`);
+    const res = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (res.ok) {
       directory = await res.json();
     }
   } catch (err) {
-    console.error('Failed to fetch directory from jsonblob:', err);
+    console.error('Failed to fetch directory from extendsclass:', err);
   }
 
   // 2. If slug already mapped and valid, return it
@@ -204,12 +224,15 @@ async function getOrCreateBlobIds(slug: string): Promise<RestaurantBlobMapping> 
   // 3. Create menu blob
   let menuBlobId = '';
   try {
-    const resMenu = await fetch('https://jsonblob.com/api/jsonBlob', {
+    const resMenu = await fetch('https://extendsclass.com/api/json-storage/bin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rest: null, cats: [], items: [] })
     });
-    menuBlobId = resMenu.headers.get('x-jsonblob-id') || '';
+    if (resMenu.ok) {
+      const data = await resMenu.json();
+      menuBlobId = data.id || '';
+    }
   } catch (err) {
     console.error('Failed to create menu blob:', err);
   }
@@ -217,12 +240,15 @@ async function getOrCreateBlobIds(slug: string): Promise<RestaurantBlobMapping> 
   // 4. Create orders blob
   let ordersBlobId = '';
   try {
-    const resOrders = await fetch('https://jsonblob.com/api/jsonBlob', {
+    const resOrders = await fetch('https://extendsclass.com/api/json-storage/bin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify([])
     });
-    ordersBlobId = resOrders.headers.get('x-jsonblob-id') || '';
+    if (resOrders.ok) {
+      const data = await resOrders.json();
+      ordersBlobId = data.id || '';
+    }
   } catch (err) {
     console.error('Failed to create orders blob:', err);
   }
@@ -234,7 +260,7 @@ async function getOrCreateBlobIds(slug: string): Promise<RestaurantBlobMapping> 
   // 5. Update directory
   directory[slug] = { menuBlobId, ordersBlobId };
   try {
-    await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`, {
+    await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(directory)
@@ -253,7 +279,13 @@ app.get("/api/menu/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
     const mapping = await getOrCreateBlobIds(slug);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.menuBlobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.menuBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!response.ok) {
       return res.status(404).json({ error: "Menu not found" });
     }
@@ -271,13 +303,13 @@ app.put("/api/menu/:slug", async (req, res) => {
     const { slug } = req.params;
     const { rest, cats, items } = req.body;
     const mapping = await getOrCreateBlobIds(slug);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.menuBlobId}`, {
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.menuBlobId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rest, cats, items })
     });
     if (!response.ok) {
-      return res.status(500).json({ error: "Failed to update menu in jsonblob" });
+      return res.status(500).json({ error: "Failed to update menu in extendsclass" });
     }
     return res.json({ success: true });
   } catch (err: any) {
@@ -291,7 +323,13 @@ app.get("/api/orders/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
     const mapping = await getOrCreateBlobIds(slug);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.ordersBlobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!response.ok) {
       return res.json([]);
     }
@@ -309,20 +347,26 @@ app.post("/api/orders/:slug", async (req, res) => {
     const { slug } = req.params;
     const newOrder = req.body;
     const mapping = await getOrCreateBlobIds(slug);
-    const getRes = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.ordersBlobId}`);
+    const getRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     const existingOrders = getRes.ok ? await getRes.json() : [];
     
     // De-duplicate & merge
     const filtered = Array.isArray(existingOrders) ? existingOrders.filter((o: any) => o.id !== newOrder.id) : [];
     const updatedOrders = [newOrder, ...filtered];
     
-    const putRes = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.ordersBlobId}`, {
+    const putRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedOrders)
     });
     if (!putRes.ok) {
-      return res.status(500).json({ error: "Failed to sync order to jsonblob" });
+      return res.status(500).json({ error: "Failed to sync order to extendsclass" });
     }
     return res.json(updatedOrders);
   } catch (err: any) {
@@ -337,7 +381,13 @@ app.patch("/api/orders/:slug/:orderId", async (req, res) => {
     const { slug, orderId } = req.params;
     const { status } = req.body;
     const mapping = await getOrCreateBlobIds(slug);
-    const getRes = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.ordersBlobId}`);
+    const getRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!getRes.ok) {
       return res.status(404).json({ error: "Orders list not found" });
     }
@@ -346,13 +396,13 @@ app.patch("/api/orders/:slug/:orderId", async (req, res) => {
       ? existingOrders.map((o: any) => o.id === orderId ? { ...o, status } : o)
       : [];
     
-    const putRes = await fetch(`https://jsonblob.com/api/jsonBlob/${mapping.ordersBlobId}`, {
+    const putRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated)
     });
     if (!putRes.ok) {
-      return res.status(500).json({ error: "Failed to update order status in jsonblob" });
+      return res.status(500).json({ error: "Failed to update order status in extendsclass" });
     }
     return res.json(updated);
   } catch (err: any) {
@@ -365,12 +415,24 @@ app.patch("/api/orders/:slug/:orderId", async (req, res) => {
 app.get("/api/users", async (req, res) => {
   try {
     let directory: Directory = {};
-    const resDir = await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateUsersBlobId(directory);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     const data = await response.json();
     return res.json(data);
   } catch (err: any) {
@@ -383,12 +445,18 @@ app.get("/api/users", async (req, res) => {
 app.put("/api/users", async (req, res) => {
   try {
     let directory: Directory = {};
-    const resDir = await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateUsersBlobId(directory);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`, {
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
@@ -407,12 +475,24 @@ app.put("/api/users", async (req, res) => {
 app.get("/api/restaurants", async (req, res) => {
   try {
     let directory: Directory = {};
-    const resDir = await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateRestaurantsBlobId(directory);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     const data = await response.json();
     return res.json(data);
   } catch (err: any) {
@@ -425,12 +505,18 @@ app.get("/api/restaurants", async (req, res) => {
 app.put("/api/restaurants", async (req, res) => {
   try {
     let directory: Directory = {};
-    const resDir = await fetch(`https://jsonblob.com/api/jsonBlob/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateRestaurantsBlobId(directory);
-    const response = await fetch(`https://jsonblob.com/api/jsonBlob/${blobId}`, {
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)

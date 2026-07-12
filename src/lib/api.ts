@@ -18,7 +18,13 @@ function isFallbackNeeded(response: Response): boolean {
 async function getOrCreateBlobIdsDirect(slug: string): Promise<RestaurantBlobMapping> {
   let directory: Directory = {};
   try {
-    const res = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`);
+    const res = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (res.ok) {
       directory = await res.json();
     }
@@ -268,7 +274,13 @@ export async function apiFetchMenu(slug: string): Promise<any> {
   } catch (err) {
     console.warn(`Local apiFetchMenu failed for ${slug}, trying direct extendsclass fallback...`, err);
     const mapping = await getOrCreateBlobIdsDirect(slug);
-    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.menuBlobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.menuBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!response.ok) {
       throw new Error('Direct extendsclass fetch menu failed');
     }
@@ -321,7 +333,13 @@ export async function apiFetchOrders(slug: string): Promise<any[]> {
     console.warn(`Local apiFetchOrders failed for ${slug}, trying direct extendsclass fallback...`, err);
     try {
       const mapping = await getOrCreateBlobIdsDirect(slug);
-      const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}`);
+      const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}?t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       if (!response.ok) {
         return [];
       }
@@ -351,7 +369,13 @@ export async function apiSyncOrder(slug: string, newOrder: any): Promise<any[]> 
   } catch (err) {
     console.warn(`Local apiSyncOrder failed for ${slug}, trying direct extendsclass fallback...`, err);
     const mapping = await getOrCreateBlobIdsDirect(slug);
-    const getRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}`);
+    const getRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     const existingOrders = getRes.ok ? await getRes.json() : [];
     
     const filtered = Array.isArray(existingOrders) ? existingOrders.filter((o: any) => o.id !== newOrder.id) : [];
@@ -387,7 +411,13 @@ export async function apiUpdateOrderStatus(slug: string, orderId: string, status
   } catch (err) {
     console.warn(`Local apiUpdateOrderStatus failed for ${slug}, trying direct extendsclass fallback...`, err);
     const mapping = await getOrCreateBlobIdsDirect(slug);
-    const getRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}`);
+    const getRes = await fetch(`https://extendsclass.com/api/json-storage/bin/${mapping.ordersBlobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!getRes.ok) {
       throw new Error('Direct orders not found');
     }
@@ -422,12 +452,24 @@ export async function apiFetchUsers(): Promise<any[]> {
   } catch (err) {
     console.warn('Local apiFetchUsers failed, trying direct extendsclass fallback...', err);
     let directory: Directory = {};
-    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateUsersBlobIdDirect(directory);
-    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!response.ok) {
       throw new Error('Direct extendsclass fetch users failed');
     }
@@ -453,12 +495,18 @@ export async function apiSaveUsers(users: any[]): Promise<any> {
   } catch (err) {
     console.warn('Local apiSaveUsers failed, trying direct extendsclass fallback...', err);
     let directory: Directory = {};
-    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateUsersBlobIdDirect(directory);
-    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}`, {
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}?t=${Date.now()}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(users)
@@ -484,12 +532,24 @@ export async function apiFetchRestaurants(): Promise<any[]> {
   } catch (err) {
     console.warn('Local apiFetchRestaurants failed, trying direct extendsclass fallback...', err);
     let directory: Directory = {};
-    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
     const blobId = await getOrCreateRestaurantsBlobIdDirect(directory);
-    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}`);
+    const response = await fetch(`https://extendsclass.com/api/json-storage/bin/${blobId}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (!response.ok) {
       throw new Error('Direct extendsclass fetch restaurants failed');
     }
@@ -515,7 +575,13 @@ export async function apiSaveRestaurants(restaurants: any[]): Promise<any> {
   } catch (err) {
     console.warn('Local apiSaveRestaurants failed, trying direct extendsclass fallback...', err);
     let directory: Directory = {};
-    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}`);
+    const resDir = await fetch(`https://extendsclass.com/api/json-storage/bin/${DIRECTORY_BLOB_ID}?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     if (resDir.ok) {
       directory = await resDir.json();
     }
